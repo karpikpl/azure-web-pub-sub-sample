@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://azuresdkreleasepreview.blob.core.windows.net/azd/schema/azure.yaml.json
+
+name: pubsub-dapr-csharp-servicebus
+metadata:
+  template: pubsub-dapr-csharp-servicebus@0.0.1-beta
+services:
+  orders:
+    project: order-processor
+    language: csharp
+    host: containerapp
+    module: app/publisher
+  checkout:
+    project: checkout
+    dist: build
+    language: csharp
+    host: containerapp
+    module: app/subscriber
+  wps-server:
+    project: wps-server
+    dist: build
+    language: csharp
+    host: containerapp
+    module: app/webpubsubServer
