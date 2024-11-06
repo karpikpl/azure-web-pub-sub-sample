@@ -70,6 +70,12 @@ app.MapWebPubSubHub<WpsServer.WebPubSub.AspHub>("/eventhandler/{*path}");
 
 app.MapGet("/", () => "Hello");
 
+app.MapGet("/negotiate/{userId}", async (string userId, WebPubSubServiceClient client) =>
+{
+    var uri = await client.GetClientAccessUriAsync(userId, roles: new[] { "webpubsub.sendToGroup.clients", "webpubsub.joinLeaveGroup.clients" }, groups: new[] { "clients" });
+    return new { Url = uri.AbsoluteUri };
+});
+
 IWebHostEnvironment env = app.Environment;
 
 if (env.IsDevelopment())
