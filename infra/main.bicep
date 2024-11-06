@@ -12,22 +12,16 @@ param location string
 param principalId string
 
 // App based params
-// Publisher
-param publisherContainerAppName string = ''
-param publisherServiceName string = 'checkout'
-param publisherAppExists bool = false
 
 // Subsciber
-param subscriberContainerAppName string = ''
-param subscriberServiceName string = 'orders'
-param subscriberAppExists bool = false
+param solverContainerAppName string = ''
+param solverServiceName string = 'solver'
+param solverAppExists bool = false
 
 // WebPubSub Server
 param wpsServerContainerAppName string = ''
 param wpsServerServiceName string = 'wps-server'
 param wpsServerAppExists bool = false
-
-
 
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
@@ -91,8 +85,6 @@ module serviceBusAccess './app/access.bicep' = {
   }
 }
 
-
-
 // Shared App Env with Dapr configuration for db
 module appEnv './app/app-env.bicep' = {
   name: 'app-env'
@@ -109,34 +101,19 @@ module appEnv './app/app-env.bicep' = {
   }
 }
 
-module publisherApp './app/publisher.bicep' = {
-  name: 'api-resources'
-  scope: rg
-  params: {
-    name: !empty(publisherContainerAppName) ? publisherContainerAppName : '${abbrs.appContainerApps}${publisherServiceName}-${resourceToken}'
-    serviceName: publisherServiceName
-    containerRegistryName: appEnv.outputs.registryName
-    location: location
-    containerAppsEnvironmentName: appEnv.outputs.environmentName
-    managedIdentityName: serviceBusAccess.outputs.managedIdentityName
-    exists: publisherAppExists
-  }
-  dependsOn: [
-    subscriberApp  // Deploy the subscriber first and then deploy the publisher
-  ]
-}
 
-module subscriberApp './app/subscriber.bicep' = {
+module solverApp './app/solver.bicep' = {
   name: 'web-resources'
   scope: rg
   params: {
-    name: !empty(subscriberContainerAppName) ? subscriberContainerAppName : '${abbrs.appContainerApps}${subscriberServiceName}-${resourceToken}'
+    name: !empty(solverContainerAppName) ? solverContainerAppName : '${abbrs.appContainerApps}${solverServiceName}-${resourceToken}'
     location: location
     containerRegistryName: appEnv.outputs.registryName
     containerAppsEnvironmentName: appEnv.outputs.environmentName
-    serviceName: subscriberServiceName
+    serviceName: solverServiceName
     managedIdentityName: serviceBusAccess.outputs.managedIdentityName
-    exists: subscriberAppExists
+    exists: solverAppExists
+    webPubSubServerUrl: webPubSubServerApp.outputs.SERVICE_WPS_SERVER_URI
   }
 }
 
@@ -150,9 +127,6 @@ module webpubsub './core/pubsub/webpubsub.bicep' = {
     location: location
     managedIdentityName: serviceBusAccess.outputs.managedIdentityName
   }
-  dependsOn: [
-    publisherApp
-  ]
 }
 
 module AccessForUser './app/accessForUser.bicep' = {
@@ -179,20 +153,31 @@ module webPubSubServerApp './app/webpubsubServer.bicep' = {
     webPubSubEndpoint: 'https://${webPubSubName}.webpubsub.azure.com'
     webPubSubHubName: webPubSubHubName
     serviceBusConnectionString: '${serviceBusResources.outputs.serviceBusName}.servicebus.windows.net'
+    appInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
   }
 }
 
-output SERVICE_PUBLISHER_NAME string = publisherApp.outputs.SERVICE_PUBLISHER_NAME
-output SERVICE_PUBLISHER_IMAGE_NAME string = publisherApp.outputs.SERVICE_PUBLISHER_IMAGE_NAME
-output SERVICE_SUBSCRIBER_NAME string = subscriberApp.outputs.SERVICE_SUBSCRIBER_NAME
-output SERVICE_SUBSCRIBER_IMAGE_NAME string = subscriberApp.outputs.SERVICE_SUBSCRIBER_IMAGE_NAME
-output SUBSCRIBER_APP_URI string = subscriberApp.outputs.SUBSCRIBER_URI
+module accessToWebPubSub './app/accessToWebPubSub.bicep' = {
+  name: 'access-to-webpubsub'
+  scope: rg
+  params: {
+    managedIdentityName: serviceBusAccess.outputs.managedIdentityName
+    webPubSubName: webpubsub.outputs.webPubSubResourceName
+  }
+}
+
+output SERVICE_SOLVER_NAME string = solverApp.outputs.SERVICE_SOLVER_NAME
+output SERVICE_SOLVER_IMAGE_NAME string = solverApp.outputs.SERVICE_SOLVER_IMAGE_NAME
 output SERVICEBUS_ENDPOINT string = serviceBusResources.outputs.SERVICEBUS_ENDPOINT
 output SERVICEBUS_NAME string = serviceBusResources.outputs.serviceBusName
 output APPINSIGHTS_INSTRUMENTATIONKEY string = monitoring.outputs.applicationInsightsInstrumentationKey
+output APPINSIGHTS_CONNECTIONSTRING string = monitoring.outputs.applicationInsightsConnectionString
 output APPLICATIONINSIGHTS_NAME string = monitoring.outputs.applicationInsightsName
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = appEnv.outputs.environmentName
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = appEnv.outputs.registryLoginServer
 output AZURE_CONTAINER_REGISTRY_NAME string = appEnv.outputs.registryName
 output AZURE_MANAGED_IDENTITY_NAME string = serviceBusAccess.outputs.managedIdentityName
 output AZURE_WEBPUBSUB_NAME string = webpubsub.outputs.webPubSubResourceName
+output SERVICE_WPS_SERVER_IMAGE_NAME string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_IMAGE_NAME
+output SERVICE_WPS_SERVER_NAME string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_NAME
+output SERVICE_WPS_SERVER_URI string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_URI

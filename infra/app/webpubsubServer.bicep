@@ -17,6 +17,13 @@ param webPubSubHubName string
 @description('Service Bus Connection String')
 param serviceBusConnectionString string
 
+@description('Application Insights Connection String')
+param appInsightsConnectionString string
+
+resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(managedIdentityName)) {
+  name: managedIdentityName
+}
+
 module webPubSubServer '../core/host/container-app-upsert.bicep' = {
   name: '${serviceName}-container-app-module'
   params: {
@@ -45,6 +52,14 @@ module webPubSubServer '../core/host/container-app-upsert.bicep' = {
       {
         name: 'ServiceBus__ConnectionString'
         value: serviceBusConnectionString
+      }
+      {
+        name: 'azureClientId'
+        value: userIdentity.properties.clientId
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsightsConnectionString
       }
     ]
   }

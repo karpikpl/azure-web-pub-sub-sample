@@ -28,7 +28,7 @@ resource caEnvironment  'Microsoft.App/managedEnvironments@2022-06-01-preview' e
 
 resource daprComponentPubsub 'Microsoft.App/managedEnvironments/daprComponents@2022-06-01-preview' = {
   parent: caEnvironment
-  name: 'orderpubsub'
+  name: 'jobspubsub'
   properties: {
     componentType: 'pubsub.azure.servicebus'
     version: 'v1'
@@ -43,7 +43,7 @@ resource daprComponentPubsub 'Microsoft.App/managedEnvironments/daprComponents@2
       }
       {
         name: 'consumerID'
-        value: 'orders' // Set to the same value of the subscription seen in ./servicebus.bicep
+        value: 'jobs' // Set to the same value of the subscription seen in ./servicebus.bicep
       }
     ]
     scopes: []

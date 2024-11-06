@@ -42,3 +42,4 @@ packages
 .DS_Store
 
 .azure
+.dapr

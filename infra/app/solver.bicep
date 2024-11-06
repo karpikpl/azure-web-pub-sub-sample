@@ -1,22 +1,25 @@
 param location string = resourceGroup().location
 param tags object = {}
 
+@description('Url for the web pub sub server')
+param webPubSubServerUrl string
+
 param containerAppsEnvironmentName string
 param containerRegistryName string
 param name string = ''
-param serviceName string = 'orders'
+param serviceName string = 'solver'
 param managedIdentityName string = ''
 param exists bool = false
-module subscriber '../core/host/container-app-upsert.bicep' = {
+module solver '../core/host/container-app-upsert.bicep' = {
   name: '${serviceName}-container-app-module'
   params: {
     name: name
     location: location
-    tags: union(tags, { 'azd-service-name': 'orders' })
+    tags: union(tags, { 'azd-service-name': 'solver' })
     containerAppsEnvironmentName: containerAppsEnvironmentName
     containerRegistryName: containerRegistryName
-    containerCpuCoreCount: '1.0'
-    containerMemory: '2.0Gi'
+    containerCpuCoreCount: '0.5'
+    containerMemory: '1.0Gi'
     exists: exists
     daprEnabled: true
     containerName: serviceName
@@ -24,10 +27,16 @@ module subscriber '../core/host/container-app-upsert.bicep' = {
     targetPort: 7001
     identityType: 'UserAssigned'
     identityName: managedIdentityName
+    env: [
+      {
+        name: 'WEBPUBSUB_SERVER_URL'
+        value: webPubSubServerUrl
+      }
+    ]
   }
 }
 
 
-output SUBSCRIBER_URI string = subscriber.outputs.uri
-output SERVICE_SUBSCRIBER_IMAGE_NAME string = subscriber.outputs.imageName
-output SERVICE_SUBSCRIBER_NAME string = subscriber.outputs.name
+output SOLVER_URI string = solver.outputs.uri
+output SERVICE_SOLVER_IMAGE_NAME string = solver.outputs.imageName
+output SERVICE_SOLVER_NAME string = solver.outputs.name

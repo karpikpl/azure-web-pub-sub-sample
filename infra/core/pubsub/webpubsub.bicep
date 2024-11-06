@@ -55,7 +55,7 @@ resource hub 'Microsoft.SignalRService/WebPubSub/hubs@2023-03-01-preview' = {
         auth: {
           type: 'ManagedIdentity'
           managedIdentity: {
-            resource: userIdentity.properties.principalId
+            resource: userIdentity.properties.clientId
           }
         }
       }

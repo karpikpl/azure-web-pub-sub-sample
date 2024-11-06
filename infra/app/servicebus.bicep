@@ -1,7 +1,7 @@
 param resourceToken string
 param location string
 param skuName string = 'Standard'
-param topicName string = 'orders'
+param topicName string = 'jobs'
 param queueName string = 'notifications'
 param tags object
 

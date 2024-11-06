@@ -4,17 +4,11 @@ name: pubsub-dapr-csharp-servicebus
 metadata:
   template: pubsub-dapr-csharp-servicebus@0.0.1-beta
 services:
-  orders:
-    project: order-processor
+  solver:
+    project: job-solver
     language: csharp
     host: containerapp
-    module: app/publisher
-  checkout:
-    project: checkout
-    dist: build
-    language: csharp
-    host: containerapp
-    module: app/subscriber
+    module: app/solver
   wps-server:
     project: wps-server
     dist: build

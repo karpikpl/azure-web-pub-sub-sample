@@ -11,20 +11,14 @@
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
     },
-    "publisherImageName": {
-      "value": "${SERVICE_PUBLISHER_IMAGE_NAME}"
-    },
-    "subscriberImageName": {
-      "value": "${SERVICE_SUBSCRIBER_IMAGE_NAME}"
+    "solverImageName": {
+      "value": "${SERVICE_SOLVER_IMAGE_NAME}"
     },
     "wpsServerImageName": {
       "value": "${SERVICE_WPS_SERVER_IMAGE_NAME}"
     },
-    "publisherAppExists": {
-      "value": "${SERVICE_CHECKOUT_RESOURCE_EXISTS}"
-    },
-    "subscriberAppExists": {
-      "value": "${SERVICE_ORDERS_RESOURCE_EXISTS}"
+    "solverAppExists": {
+      "value": "${SERVICE_SOLVER_RESOURCE_EXISTS}"
     },
     "wpsServerAppExists": {
       "value": "${SERVICE_WPS_SERVER_RESOURCE_EXISTS}"
