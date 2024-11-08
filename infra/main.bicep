@@ -42,7 +42,7 @@ var tags = { 'azd-env-name': environmentName }
 
 // WebPubSub Resource
 var webPubSubName = '${abbrs.webpubsub}${resourceToken}'
-var webPubSubHubName = 'asp'
+var webPubSubHubName = 'AspHub'
 
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -150,9 +150,9 @@ module webPubSubServerApp './app/webpubsubServer.bicep' = {
     serviceName: wpsServerServiceName
     managedIdentityName: serviceBusAccess.outputs.managedIdentityName
     exists: wpsServerAppExists
-    webPubSubEndpoint: 'https://${webPubSubName}.webpubsub.azure.com'
+    webPubSubHostname: '${webPubSubName}.webpubsub.azure.com'
     webPubSubHubName: webPubSubHubName
-    serviceBusConnectionString: '${serviceBusResources.outputs.serviceBusName}.servicebus.windows.net'
+    serviceBusNamespace: '${serviceBusResources.outputs.serviceBusName}.servicebus.windows.net'
     appInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
   }
 }
@@ -170,6 +170,7 @@ output SERVICE_SOLVER_NAME string = solverApp.outputs.SERVICE_SOLVER_NAME
 output SERVICE_SOLVER_IMAGE_NAME string = solverApp.outputs.SERVICE_SOLVER_IMAGE_NAME
 output SERVICEBUS_ENDPOINT string = serviceBusResources.outputs.SERVICEBUS_ENDPOINT
 output SERVICEBUS_NAME string = serviceBusResources.outputs.serviceBusName
+output SERVICEBUS_TOPIC_NAME string = serviceBusResources.outputs.topicName
 output APPINSIGHTS_INSTRUMENTATIONKEY string = monitoring.outputs.applicationInsightsInstrumentationKey
 output APPINSIGHTS_CONNECTIONSTRING string = monitoring.outputs.applicationInsightsConnectionString
 output APPLICATIONINSIGHTS_NAME string = monitoring.outputs.applicationInsightsName
@@ -178,6 +179,8 @@ output AZURE_CONTAINER_REGISTRY_ENDPOINT string = appEnv.outputs.registryLoginSe
 output AZURE_CONTAINER_REGISTRY_NAME string = appEnv.outputs.registryName
 output AZURE_MANAGED_IDENTITY_NAME string = serviceBusAccess.outputs.managedIdentityName
 output AZURE_WEBPUBSUB_NAME string = webpubsub.outputs.webPubSubResourceName
+output AZURE_WEBPUBSUB_HUB_NAME string = webPubSubHubName
+output AZURE_WEBPUBSUB_HOSTNAME string = webpubsub.outputs.webPubSubHostName
 output SERVICE_WPS_SERVER_IMAGE_NAME string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_IMAGE_NAME
 output SERVICE_WPS_SERVER_NAME string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_NAME
 output SERVICE_WPS_SERVER_URI string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_URI

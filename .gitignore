@@ -43,3 +43,6 @@ packages
 
 .azure
 .dapr
+
+# local settings
+appsettings.local.json

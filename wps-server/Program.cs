@@ -11,6 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 //     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 // builder.Services.AddAuthorization();
 
+builder.Configuration.AddJsonFile("appsettings.local.json", optional: false, reloadOnChange: true);
+
 var managedIdentityId = builder.Configuration.GetValue<string>("azureClientId");
 Azure.Core.TokenCredential credential = managedIdentityId == null
     ? new DefaultAzureCredential(includeInteractiveCredentials: true)
@@ -18,11 +20,8 @@ Azure.Core.TokenCredential credential = managedIdentityId == null
 
 builder.Services.AddAzureClients(clientBuilder =>
 {
-    var connectionString = builder.Configuration.GetValue<string>("ServiceBus:ConnectionString");
-
-    if (string.IsNullOrEmpty(connectionString))
-        throw new Exception("Service Bus connection string (ServiceBus:ConnectionString) is missing");
-
+    var connectionString = builder.Configuration.GetValue<string>("ServiceBus:Namespace")
+        ?? throw new InvalidOperationException("Service Bus namespace (ServiceBus:Namespace) is missing");
 
     if (connectionString.Contains("SharedAccessKey", StringComparison.InvariantCultureIgnoreCase))
     {
@@ -34,25 +33,22 @@ builder.Services.AddAzureClients(clientBuilder =>
         clientBuilder.UseCredential(credential);
     }
 
-    var pubsubEndpoint = builder.Configuration.GetValue<string>("WebPubSub:Endpoint");
-    var hubName = builder.Configuration.GetValue<string>("WebPubSub:HubName");
-
-    if (string.IsNullOrEmpty(pubsubEndpoint))
-        throw new Exception("Web PubSub connection string (WebPubSub:Endpoint) is missing");
-
-    if (string.IsNullOrEmpty(hubName))
-        throw new Exception("Web PubSub hub name (WebPubSub:HubName) is missing");
+    var pubsubHostname = builder.Configuration.GetValue<string>("WebPubSub:Hostname")
+        ?? throw new InvalidOperationException("Web PubSub hostname (WebPubSub:Hostname) is missing");
+    var hubName = builder.Configuration.GetValue<string>("WebPubSub:HubName")
+        ?? throw new InvalidOperationException("Web PubSub hub name (WebPubSub:HubName) is missing");
 
     // using Identity: https://learn.microsoft.com/en-us/azure/azure-web-pubsub/howto-create-serviceclient-with-net-and-azure-identity
-    clientBuilder.AddWebPubSubServiceClient(new Uri(pubsubEndpoint), hubName, credential);
+    clientBuilder.AddWebPubSubServiceClient(new Uri($"https://{pubsubHostname}"), hubName, credential);
 });
 
 builder.Services.AddHostedService<WpsServer.OtherServices.ServiceBusHostedService>();
 builder.Services
     .AddWebPubSub(options =>
     {
-        var pubsubEndpoint = builder.Configuration.GetValue<string>("WebPubSub:Endpoint")!;
-        options.ServiceEndpoint = new Microsoft.Azure.WebPubSub.AspNetCore.WebPubSubServiceEndpoint(new Uri(pubsubEndpoint), credential);
+        var pubsubHostname = builder.Configuration.GetValue<string>("WebPubSub:Hostname")
+            ?? throw new InvalidOperationException("Web PubSub hostname (WebPubSub:Hostname) is missing");
+        options.ServiceEndpoint = new Microsoft.Azure.WebPubSub.AspNetCore.WebPubSubServiceEndpoint(new Uri($"https://{pubsubHostname}"), credential);
     })
     .AddWebPubSubServiceClient<WpsServer.WebPubSub.AspHub>();
 

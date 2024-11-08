@@ -4,17 +4,28 @@ using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.WebPubSub.Clients;
 using Microsoft.Identity.Client;
+using Microsoft.Extensions.Configuration;
 
 var isDoneEvent = new ManualResetEventSlim(false);
 
+ConfigurationBuilder builder = new ConfigurationBuilder();
+builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+builder.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
+builder.AddEnvironmentVariables();
+builder.AddCommandLine(args);
+
+var configuration = builder.Build();
+
 // Configuration
 // Replace with your Service Bus namespace and queue or topic name
-string fullyQualifiedNamespace = Environment.GetEnvironmentVariable("SERVICEBUS_NAMESPACE")!;
-string queueOrTopicName = "jobs";
+string fullyQualifiedNamespace = configuration["ServiceBus:Namespace"] ?? throw new ArgumentNullException("ServiceBus:Namespace");
+string queueOrTopicName = configuration["ServiceBus:TopicName"] ?? throw new ArgumentNullException("ServiceBus:TopicName");
+string webpubsubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new ArgumentNullException("WebPubSub:ServerUrl");
+
 string jobId = $"job-{Environment.UserName}-{DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture)}";
 string userid = $"scheduler-{jobId}";
 
-Uri webPubSubServerUri = new Uri($"{Environment.GetEnvironmentVariable("WEBPUBSUB_SERVER_URL")}/negotiate/{userid}/{jobId}");
+Uri webPubSubServerUri = new Uri($"{webpubsubServerUrl}/negotiate/{userid}/{jobId}");
 
 // get connection string for WebPubSub
 using HttpClient httpClient = new HttpClient();
@@ -32,13 +43,15 @@ webPubSubClient.GroupMessageReceived+= (args) =>
 {
     if(args.Message.DataType == WebPubSubDataType.Json)
     {
-        var jobUpdate = args.Message.Data.ToObjectFromJson<JobUpdate>();
+        var jobUpdate = args.Message.Data.ToObjectFromJson<JobUpdate>()
+            ?? throw new InvalidOperationException("Failed to deserialize JobUpdate message.");
+
         Console.WriteLine($"Message received in group {args.Message.Group}: {jobUpdate.Name} - {jobUpdate.Step} - {jobUpdate.Status}");
 
         if(jobUpdate.Step == "Done" && jobUpdate.Status == "Completed")
         {
             isDoneEvent.Set();
-            Console.WriteLine("Job is done.");
+            Console.WriteLine("Job is done. 🔥🔥🔥");
         }
     }
     else

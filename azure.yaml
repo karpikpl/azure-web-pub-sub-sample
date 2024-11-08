@@ -15,3 +15,16 @@ services:
     language: csharp
     host: containerapp
     module: app/webpubsubServer
+
+hooks:
+  postprovision:
+    windows: # Run referenced script that uses environment variables (script shown below)
+      shell: pwsh
+      run: ./scripts/createLocalFiles.ps1
+      interactive: false
+      continueOnError: false
+    posix:
+      shell: sh
+      run: ./scripts/createLocalFiles.sh
+      interactive: false
+      continueOnError: false

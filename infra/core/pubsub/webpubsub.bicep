@@ -37,7 +37,7 @@ resource webPubSub 'Microsoft.SignalRService/webPubSub@2024-04-01-preview' = {
     tls: {
       clientCertEnabled: false
     }
-      publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: 'Enabled'
   }
 }
 
@@ -52,19 +52,19 @@ resource hub 'Microsoft.SignalRService/WebPubSub/hubs@2023-03-01-preview' = {
         systemEvents: [
           'connect'
         ]
-        auth: {
-          type: 'ManagedIdentity'
-          managedIdentity: {
-            resource: userIdentity.properties.clientId
-          }
-        }
+        // this needs to be enabled with a valid app registration "api://<client_id>"
+        // auth: {
+        //   type: 'ManagedIdentity'
+        //   managedIdentity: {
+        //     resource: userIdentity.properties.clientId
+        //   }
+        // }
       }
     ]
-    anonymousConnectPolicy: 'allow'
+    anonymousConnectPolicy: 'deny'
   }
 }
 
 output webPubSubResourceId string = webPubSub.id
 output webPubSubResourceName string = webPubSub.name
 output webPubSubHostName string = webPubSub.properties.hostName
-output webPubSubConnectionString string = listKeys(webPubSub.id, '2021-10-01').primaryConnectionString

@@ -8,14 +8,14 @@ param serviceName string = 'wps-server'
 param managedIdentityName string = ''
 param exists bool = false
 
-@description('Web PubSub Server Endpoint')
-param webPubSubEndpoint string
+@description('Web PubSub Server Hostname')
+param webPubSubHostname string
 
 @description('Web PubSub Server Hub Name')
 param webPubSubHubName string
 
-@description('Service Bus Connection String')
-param serviceBusConnectionString string
+@description('Service Bus Namespace')
+param serviceBusNamespace string
 
 @description('Application Insights Connection String')
 param appInsightsConnectionString string
@@ -42,16 +42,16 @@ module webPubSubServer '../core/host/container-app-upsert.bicep' = {
     targetPort: 80
     env: [
       {
-        name: 'WebPubSub__Endpoint'
-        value: webPubSubEndpoint
+        name: 'WebPubSub__Hostname'
+        value: webPubSubHostname
       }
       {
         name: 'WebPubSub__HubName'
         value: webPubSubHubName
       }
       {
-        name: 'ServiceBus__ConnectionString'
-        value: serviceBusConnectionString
+        name: 'ServiceBus__Namespace'
+        value: serviceBusNamespace
       }
       {
         name: 'azureClientId'

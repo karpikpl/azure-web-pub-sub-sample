@@ -20,6 +20,7 @@ public class AspHub : WebPubSubHub
         _webPubSubServiceClient = webPubSubServiceClient;
     }
 
+
     public override ValueTask<ConnectEventResponse> OnConnectAsync(ConnectEventRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("OnConnectAsync userId:{UserId}", request.ConnectionContext.UserId);

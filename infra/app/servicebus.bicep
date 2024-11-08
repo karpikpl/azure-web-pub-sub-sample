@@ -44,3 +44,4 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2022-10-01-preview
 
 output SERVICEBUS_ENDPOINT string = serviceBusNamespace.properties.serviceBusEndpoint
 output serviceBusName string = serviceBusNamespace.name
+output topicName string = topicName
