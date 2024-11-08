@@ -45,7 +45,7 @@ namespace subscriber
 
             client.Disconnected += (args) =>
             {
-                Console.WriteLine("Disconnected with error: " + args.DisconnectedMessage);
+                Console.WriteLine("Disconnected with error: " + args.DisconnectedMessage.Reason);
                 return Task.CompletedTask;
             };
 
