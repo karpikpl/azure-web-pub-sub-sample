@@ -39,7 +39,7 @@ namespace subscriber
 
             client.ServerMessageReceived += (args) =>
             {
-                Console.WriteLine("Server message received: " + args.Message);
+                Console.WriteLine("Server message received: " + args.Message.Data.ToString());
                 return Task.CompletedTask;
             };
 

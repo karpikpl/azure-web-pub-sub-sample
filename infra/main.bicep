@@ -123,7 +123,7 @@ module webpubsub './core/pubsub/webpubsub.bicep' = {
   params: {
     webPubSubName: webPubSubName
     hubName: webPubSubHubName
-    eventHandlerUrl: webPubSubServerApp.outputs.SERVICE_WPS_SERVER_URI
+    eventHandlerUrl: '${webPubSubServerApp.outputs.SERVICE_WPS_SERVER_URI}/eventhandler'
     location: location
     managedIdentityName: serviceBusAccess.outputs.managedIdentityName
   }
