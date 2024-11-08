@@ -53,22 +53,12 @@ builder.Services
 builder.Services.AddApplicationInsightsTelemetry();
 builder.Logging.AddApplicationInsights();
 builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("WpsServer", LogLevel.Trace);
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowAnyOrigin();
-    });
-});
 
 // Add services to the container.
 
 var app = builder.Build();
 
 app.UseRouting();
-app.UseCors();
 
 // app.UseAuthentication();
 // app.UseAuthorization();
@@ -88,26 +78,6 @@ app.MapGet("/negotiate/{userId}/{groupName}", async (string userId, string group
 
 // Abuse protection: https://learn.microsoft.com/en-us/azure/azure-web-pubsub/howto-troubleshoot-common-issues#abuseprotectionresponsemissingallowedorigin
 // From cloud events: https://github.com/cloudevents/spec/blob/v1.0/http-webhook.md#4-abuse-protection
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == HttpMethods.Options && context.Request.Headers.ContainsKey("WebHook-Request-Origin"))
-    {
-        var origin = context.Request.Headers["WebHook-Request-Origin"].First();
-
-        if(origin?.Equals(pubsubHostname, StringComparison.OrdinalIgnoreCase) == false)
-        {
-            context.RequestServices.GetService<ILogger<Program>>()!.LogWarning($"Request origin {origin} is not allowed. It doesn't match {pubsubHostname}");
-            context.Response.StatusCode = 403;
-            return;
-        }
-        
-        context.Response.Headers["WebHook-Allowed-Origin"] = "*";
-        context.Response.StatusCode = 200;
-        return;
-    }
-
-    await next();
-});
 
 IWebHostEnvironment env = app.Environment;
 
