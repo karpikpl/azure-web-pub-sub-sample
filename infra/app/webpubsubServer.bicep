@@ -39,7 +39,7 @@ module webPubSubServer '../core/host/container-app-upsert.bicep' = {
     identityType: 'UserAssigned'
     identityName: managedIdentityName
     exists: exists
-    targetPort: 80
+    targetPort: 7001
     env: [
       {
         name: 'WebPubSub__Hostname'
