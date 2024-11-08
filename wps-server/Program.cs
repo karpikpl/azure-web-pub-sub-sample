@@ -13,6 +13,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("appsettings.local.json", optional: false, reloadOnChange: true);
 
+var pubsubHostname = builder.Configuration.GetValue<string>("WebPubSub:Hostname")
+    ?? throw new InvalidOperationException("Web PubSub hostname (WebPubSub:Hostname) is missing");
+var hubName = builder.Configuration.GetValue<string>("WebPubSub:HubName")
+    ?? throw new InvalidOperationException("Web PubSub hub name (WebPubSub:HubName) is missing");
+
 var managedIdentityId = builder.Configuration.GetValue<string>("azureClientId");
 Azure.Core.TokenCredential credential = managedIdentityId == null
     ? new DefaultAzureCredential(includeInteractiveCredentials: true)
@@ -33,11 +38,6 @@ builder.Services.AddAzureClients(clientBuilder =>
         clientBuilder.UseCredential(credential);
     }
 
-    var pubsubHostname = builder.Configuration.GetValue<string>("WebPubSub:Hostname")
-        ?? throw new InvalidOperationException("Web PubSub hostname (WebPubSub:Hostname) is missing");
-    var hubName = builder.Configuration.GetValue<string>("WebPubSub:HubName")
-        ?? throw new InvalidOperationException("Web PubSub hub name (WebPubSub:HubName) is missing");
-
     // using Identity: https://learn.microsoft.com/en-us/azure/azure-web-pubsub/howto-create-serviceclient-with-net-and-azure-identity
     clientBuilder.AddWebPubSubServiceClient(new Uri($"https://{pubsubHostname}"), hubName, credential);
 });
@@ -46,8 +46,6 @@ builder.Services.AddHostedService<WpsServer.OtherServices.ServiceBusHostedServic
 builder.Services
     .AddWebPubSub(options =>
     {
-        var pubsubHostname = builder.Configuration.GetValue<string>("WebPubSub:Hostname")
-            ?? throw new InvalidOperationException("Web PubSub hostname (WebPubSub:Hostname) is missing");
         options.ServiceEndpoint = new Microsoft.Azure.WebPubSub.AspNetCore.WebPubSubServiceEndpoint(new Uri($"https://{pubsubHostname}"), credential);
     })
     .AddWebPubSubServiceClient<WpsServer.WebPubSub.AspHub>();
@@ -95,11 +93,10 @@ app.Use(async (context, next) =>
     if (context.Request.Method == HttpMethods.Options && context.Request.Headers.ContainsKey("WebHook-Request-Origin"))
     {
         var origin = context.Request.Headers["WebHook-Request-Origin"].First();
-        var pubsubEndpoint = builder.Configuration.GetValue<string>("WebPubSub:Endpoint")?.Replace("http://", "").Replace("https://", "");
 
-        if(origin?.Equals(pubsubEndpoint, StringComparison.OrdinalIgnoreCase) == false)
+        if(origin?.Equals(pubsubHostname, StringComparison.OrdinalIgnoreCase) == false)
         {
-            context.RequestServices.GetService<ILogger<Program>>()!.LogWarning($"Request origin {origin} is not allowed. It doesn't match {pubsubEndpoint}");
+            context.RequestServices.GetService<ILogger<Program>>()!.LogWarning($"Request origin {origin} is not allowed. It doesn't match {pubsubHostname}");
             context.Response.StatusCode = 403;
             return;
         }
