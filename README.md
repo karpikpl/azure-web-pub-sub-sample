@@ -8,17 +8,22 @@ products:
 - azure
 - azure-container-apps
 - azure-service-bus
+- azure-web-pub-sub
 urlFragment: pubsub-dapr-csharp-servicebus
-name: Microservice communication using pubsub (async)(C#)
-description: Create a publisher microservice and a subscriber microservice with C# to demonstrate how Dapr enables a publish-subcribe pattern. The publisher will generate messages of a specific topic, while subscribers will listen for messages of specific topics. 
+name: Microservice communication using pubsub (async)(C#) and web pub sub (websockets)
+description: Create a subscriber microservice with C# to demonstrate how Dapr enables a subcribe pattern. Console app will publish a message on service bus topic, subscriber microservice will pick it up and execute the job. Both services talk to each other using websockets via azure web pub sub service.
 ---
 <!-- YAML front-matter schema: https://review.learn.microsoft.com/en-us/help/contribute/samples/process/onboarding?branch=main#supported-metadata-fields-for-readmemd -->
 
-# Microservice communication using pubsub (async)
+# Microservice communication using pubsub (async) and websockets
 
 ![](images/pubsub-diagram.png)
 
-In this quickstart, you'll create a publisher microservice and a subscriber microservice to demonstrate how Dapr enables a publish-subcribe pattern. The publisher will generate messages of a specific topic, while subscribers will listen for messages of specific topics. See [Why Pub-Sub](#why-pub-sub) to understand when this pattern might be a good choice for your software architecture.
+In this quickstart, you'll create a subscriber microservice to demonstrate how Dapr enables a publish-subcribe pattern. The publisher will be a console app (`console scheduler`) that schedules a job on a specific topic, while subscriber (`job solver`) will listen for messages of specific topics and execute the job. See [Why Pub-Sub](#why-pub-sub) to understand when this pattern might be a good choice for your software architecture.
+
+The key thing about this sample is that console scheduler app communicates with job solver using websockets. Scheduler app has the ability to "cancel" the job and the solver is sending updates on the job progress.
+
+## Dapr
 
 For more details about this quickstart example please see the [Pub-Sub Quickstart documentation](https://docs.dapr.io/getting-started/quickstarts/pubsub-quickstart/).
 
@@ -26,13 +31,15 @@ Visit [this](https://docs.dapr.io/developing-applications/building-blocks/pubsub
 
 > **Note:** This example leverages the Dapr client SDK.  If you are looking for the example using only HTTP [click here](../http).
 
-This quickstart includes one publisher:
+This quickstart includes one publisher - `console-scheduler`
 
-- Dotnet client message generator `checkout` 
+- Dotnet client console app `console-scheduler` 
 
 And one subscriber: 
  
-- Dotnet subscriber `order-processor`
+- Dotnet job-solver `job-solver`
+
+There's also Azure Web Pub Sub server app - `wps-server`, it handles events from Azure Web Sub and included `/negotiate` API that allows clients to connect to web pub sub resource using web sockets.
 
 ### Pre-requisites
 
@@ -44,83 +51,6 @@ For this example, you will need:
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 <!-- END_IGNORE -->
 
-### Run Dotnet message subscriber with Dapr
-
-1. Navigate to the directory and install dependencies: 
-
-<!-- STEP
-name: Install Dotnet dependencies
--->
-
-```bash
-cd ./order-processor
-dotnet restore
-dotnet build
-```
-<!-- END_STEP -->
-2. Run the Dotnet subscriber app with Dapr: 
-
-<!-- STEP
-name: Run Dotnet subscriber
-expected_stdout_lines:
-  - "You're up and running! Both Dapr and your app logs will appear here."
-  - '== APP == Subscriber received : Order { OrderId = 2 }'
-  - "Exited Dapr successfully"
-  - "Exited App successfully"
-expected_stderr_lines:
-working_dir: ./order-processor
-output_match_mode: substring
-background: true
-sleep: 10
--->
-
-
-```bash
-dapr run --app-id order-processor --components-path ../components/ --app-port 7001 -- dotnet run --project .
-```
-
-<!-- END_STEP -->
-### Run Dotnet message publisher with Dapr
-
-3. Navigate to the directory and install dependencies: 
-
-<!-- STEP
-name: Install Dotnet dependencies
--->
-
-```bash
-cd ./checkout
-dotnet restore
-dotnet build
-```
-<!-- END_STEP -->
-4. Run the Dotnet publisher app with Dapr: 
-
-<!-- STEP
-name: Run Dotnet publisher
-expected_stdout_lines:
-  - "You're up and running! Both Dapr and your app logs will appear here."
-  - '== APP == Published data: Order { OrderId = 1 }'
-  - '== APP == Published data: Order { OrderId = 2 }'
-  - "Exited App successfully"
-  - "Exited Dapr successfully"
-expected_stderr_lines:
-working_dir: ./checkout
-output_match_mode: substring
-background: true
-sleep: 10
--->
-    
-```bash
-dapr run --app-id checkout --components-path ../components/ -- dotnet run --project .
-```
-
-<!-- END_STEP -->
-
-```bash
-dapr stop --app-id order-processor
-```
-
 ### Deploy apps to Azure (Azure Container Apps, Azure Service Bus)
 
 #### Deploy to Azure for dev-test
@@ -130,7 +60,7 @@ NOTE: make sure you have Azure Dev CLI pre-reqs [here](https://learn.microsoft.c
 5. Run the following command to initialize the project. 
 
 ```bash
-azd init --template https://github.com/Azure-Samples/pubsub-dapr-csharp-servicebus
+azd init --template https://github.com/karpikpl/azure-web-pub-sub-sample
 ``` 
 
 This command will clone the code to your current folder and prompt you for the following information:
@@ -148,3 +78,13 @@ This command will prompt you for the following information:
 - `Azure Subscription`: The Azure Subscription where your resources will be deployed.
 
 > NOTE: This may take a while to complete as it executes three commands: `azd package` (packages a deployable copy of your application),`azd provision` (provisions Azure resources), and `azd deploy` (deploys application code). You will see a progress indicator as it packages, provisions and deploys your application.
+
+#### Run the console scheduler
+
+Once the infrastructure is deployed, `appsettings.local.json` files will be created for all projects.
+
+To schedule a job, run `dotnet run` from `console-scheduler` directory.
+
+There are two other test project that just verify azure web pub sub is working:
+- `console-publisher` - sends message to all subscribers.
+- `console-subscriber` - subscribe to message from web pub sub.
