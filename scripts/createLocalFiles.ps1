@@ -24,6 +24,7 @@ $json_content = @{
         HubName = $envDict['AZURE_WEBPUBSUB_HUB_NAME']
         ServerUrl = $envDict['SERVICE_WPS_SERVER_URI']
     }
+    ApiKey = $envDict['API_KEY']
 } | ConvertTo-Json -Depth 5
 
 $json_content | Set-Content './console-subscriber/appsettings.local.json'

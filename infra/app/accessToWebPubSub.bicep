@@ -1,6 +1,7 @@
 param managedIdentityName string
 param webPubSubName string
-
+@description('Assign role assignments to the managed identity')
+param doRoleAssignments bool
 
 // See https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/web-and-mobile#web-pubsub-service-owner
 var roleIdOwner = '12cf5a90-567b-43ae-8102-96cf46c7d9b4' // Web PubSub Service Owner
@@ -15,7 +16,7 @@ resource webPubSub 'Microsoft.SignalRService/webPubSub@2024-04-01-preview' exist
 }
 
 // Grant permissions to the current user to specific role to webpubsub
-resource roleAssignmentOwner 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+resource roleAssignmentOwner 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = if(doRoleAssignments) {
   name: guid(webPubSub.id, roleIdOwner, managedIdentityName)
   scope: webPubSub
   properties: {
@@ -28,3 +29,4 @@ resource roleAssignmentOwner 'Microsoft.Authorization/roleAssignments@2020-04-01
   ]
 }
 
+output missingRoleAssignments string = doRoleAssignments ? '' : 'Assignment for ${managedIdentityName} to ${webPubSubName} is not enabled. Add service "Web PubSub Service Owner" role to ${userIdentity.properties.principalId}'

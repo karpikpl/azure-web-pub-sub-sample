@@ -9,6 +9,9 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 
+@description('Assign role assignments to the managed identity')
+param doRoleAssignments bool = true
+
 param principalId string
 
 // App based params
@@ -38,7 +41,7 @@ param resourceGroupName string = ''
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
-var tags = { 'azd-env-name': environmentName }
+var tags = { 'azd-env-name': environmentName, 'role-assignments-set': '${doRoleAssignments}' }
 
 // WebPubSub Resource
 var webPubSubName = '${abbrs.webpubsub}${resourceToken}'
@@ -50,6 +53,8 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   location: location
   tags: tags
 }
+
+var apiKey = uniqueString(subscription().id, rg.name, environmentName)
 
 // Monitor application with Azure Monitor
 module monitoring './core/monitor/monitoring.bicep' = {
@@ -82,6 +87,7 @@ module serviceBusAccess './app/access.bicep' = {
     location: location
     serviceBusName: serviceBusResources.outputs.serviceBusName
     managedIdentityName: '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
+    doRoleAssignments: doRoleAssignments
   }
 }
 
@@ -114,6 +120,8 @@ module solverApp './app/solver.bicep' = {
     managedIdentityName: serviceBusAccess.outputs.managedIdentityName
     exists: solverAppExists
     webPubSubServerUrl: webPubSubServerApp.outputs.SERVICE_WPS_SERVER_URI
+    doRoleAssignments: doRoleAssignments
+    apiKey: apiKey
   }
 }
 
@@ -129,7 +137,7 @@ module webpubsub './core/pubsub/webpubsub.bicep' = {
   }
 }
 
-module AccessForUser './app/accessForUser.bicep' = {
+module AccessForUser './app/accessForUser.bicep' = if (doRoleAssignments) {
   name: 'access-for-user'
   scope: rg
   params: {
@@ -154,6 +162,8 @@ module webPubSubServerApp './app/webpubsubServer.bicep' = {
     webPubSubHubName: webPubSubHubName
     serviceBusNamespace: '${serviceBusResources.outputs.serviceBusName}.servicebus.windows.net'
     appInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
+    doRoleAssignments: doRoleAssignments
+    apiKey: apiKey
   }
 }
 
@@ -163,6 +173,7 @@ module accessToWebPubSub './app/accessToWebPubSub.bicep' = {
   params: {
     managedIdentityName: serviceBusAccess.outputs.managedIdentityName
     webPubSubName: webpubsub.outputs.webPubSubResourceName
+    doRoleAssignments: doRoleAssignments
   }
 }
 
@@ -184,3 +195,5 @@ output AZURE_WEBPUBSUB_HOSTNAME string = webpubsub.outputs.webPubSubHostName
 output SERVICE_WPS_SERVER_IMAGE_NAME string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_IMAGE_NAME
 output SERVICE_WPS_SERVER_NAME string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_NAME
 output SERVICE_WPS_SERVER_URI string = webPubSubServerApp.outputs.SERVICE_WPS_SERVER_URI
+output API_KEY string = apiKey
+output ROLE_ASSIGNMENTS_TO_ADD string = '${serviceBusAccess.outputs.missingRoleAssignments} \n${accessToWebPubSub.outputs.missingRoleAssignments} \n${solverApp.outputs.missingRoleAssignments}'

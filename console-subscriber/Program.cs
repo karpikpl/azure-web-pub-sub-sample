@@ -21,10 +21,12 @@ namespace subscriber
             string userid = configuration["WebPubSub:UserId"] ?? "console-subscriber";
             string groupName = configuration["WebPubSub:GroupName"] ?? "group";
             string webPubSubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new ArgumentNullException("WebPubSub:ServerUrl");
+            string apiKey = configuration["ApiKey"] ?? throw new ArgumentNullException("ApiKey");
 
             Uri webPubSubServerUri = new Uri($"{webPubSubServerUrl}/negotiate/{userid}/{groupName}");
 
             using HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
             var response = await httpClient.GetFromJsonAsync<NegotiateResponse>(webPubSubServerUri);
 
             var client = new WebPubSubClient(new Uri(response!.Url));

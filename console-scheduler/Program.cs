@@ -21,6 +21,7 @@ var configuration = builder.Build();
 string fullyQualifiedNamespace = configuration["ServiceBus:Namespace"] ?? throw new ArgumentNullException("ServiceBus:Namespace");
 string queueOrTopicName = configuration["ServiceBus:TopicName"] ?? throw new ArgumentNullException("ServiceBus:TopicName");
 string webpubsubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new ArgumentNullException("WebPubSub:ServerUrl");
+string apiKey = configuration["ApiKey"] ?? throw new ArgumentNullException("ApiKey");
 
 string jobId = $"job-{Environment.UserName}-{DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture)}";
 string userid = $"scheduler-{jobId}";
@@ -29,6 +30,7 @@ Uri webPubSubServerUri = new Uri($"{webpubsubServerUrl}/negotiate/{userid}/{jobI
 
 // get connection string for WebPubSub
 using HttpClient httpClient = new HttpClient();
+httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
 var response = await httpClient.GetFromJsonAsync<NegotiateResponse>(webPubSubServerUri);
 
 // Create a ServiceBusClient using DefaultAzureCredential

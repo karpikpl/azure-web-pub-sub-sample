@@ -22,6 +22,9 @@
     },
     "wpsServerAppExists": {
       "value": "${SERVICE_WPS_SERVER_RESOURCE_EXISTS}"
+    },
+    "doRoleAssignments": {
+      "value": "${DO_ROLE_ASSIGNMENTS}"
     }
   }
 }

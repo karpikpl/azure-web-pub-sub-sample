@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "console-subscriber", "conso
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "console-scheduler", "console-scheduler\console-scheduler.csproj", "{BF95E9D4-C8C7-44EF-A9DF-2DCEBC98A58A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "job-solver", "job-solver\job-solver.csproj", "{7DC0157E-4289-47F8-9848-E9733D3D276E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wps-server", "wps-server\wps-server.csproj", "{4F268BF9-4185-4BE2-8B86-B6AF3B6BB65E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,13 @@ Global
 		{BF95E9D4-C8C7-44EF-A9DF-2DCEBC98A58A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF95E9D4-C8C7-44EF-A9DF-2DCEBC98A58A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BF95E9D4-C8C7-44EF-A9DF-2DCEBC98A58A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DC0157E-4289-47F8-9848-E9733D3D276E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DC0157E-4289-47F8-9848-E9733D3D276E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DC0157E-4289-47F8-9848-E9733D3D276E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DC0157E-4289-47F8-9848-E9733D3D276E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F268BF9-4185-4BE2-8B86-B6AF3B6BB65E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F268BF9-4185-4BE2-8B86-B6AF3B6BB65E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F268BF9-4185-4BE2-8B86-B6AF3B6BB65E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F268BF9-4185-4BE2-8B86-B6AF3B6BB65E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

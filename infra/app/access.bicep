@@ -2,6 +2,9 @@ param managedIdentityName string
 param serviceBusName string
 param location string
 
+@description('Assign role assignments to the managed identity')
+param doRoleAssignments bool
+
 // See https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#azure-service-bus-data-sender
 var roleIdS = '69a216fc-b8fb-44d8-bc22-1f3c2cd27a39' // Azure Service Bus Data Sender
 // See https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#azure-service-bus-data-receiver
@@ -19,7 +22,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2021-11-01' existing = {
 }
 
 // Grant permissions to the managedIdentity to specific role to servicebus
-resource roleAssignmentReceiver 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+resource roleAssignmentReceiver 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = if (doRoleAssignments) {
   name: guid(serviceBus.id, roleIdR, managedIdentityName)
   scope: serviceBus
   properties: {
@@ -33,7 +36,7 @@ resource roleAssignmentReceiver 'Microsoft.Authorization/roleAssignments@2020-04
 }
 
 // Grant permissions to the managedIdentity to specific role to servicebus
-resource roleAssignmentSender 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+resource roleAssignmentSender 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = if (doRoleAssignments) {
   name: guid(serviceBus.id, roleIdS, managedIdentityName)
   scope: serviceBus
   properties: {
@@ -50,3 +53,4 @@ output managedIdentityPrincipalId string = managedIdentity.properties.principalI
 output managedIdentityClientlId string = managedIdentity.properties.clientId
 output managedIdentityId string = managedIdentity.id
 output managedIdentityName string = managedIdentity.name
+output missingRoleAssignments string = doRoleAssignments ? '' : 'Assignment for ${managedIdentityName} to ${serviceBusName} is not enabled. Add service bus sender and reader roles to ${managedIdentity.properties.principalId}'

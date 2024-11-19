@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var webPubSubServerUrl = builder.Configuration["WEBPUBSUB_SERVER_URL"];
 var username = builder.Configuration["HOSTNAME"] ?? Environment.MachineName;
+string apiKey = builder.Configuration["ApiKey"] ?? throw new ArgumentNullException("ApiKey");
 
 var app = builder.Build();
 
@@ -34,6 +35,8 @@ app.MapPost("/jobs", [Topic("jobspubsub", "jobs")] async (ILogger<Program> logge
 
     // get connection string for WebPubSub
     using HttpClient httpClient = new HttpClient();
+    httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
+
     string webPubSubConnectionString = string.Empty;
     try
     {

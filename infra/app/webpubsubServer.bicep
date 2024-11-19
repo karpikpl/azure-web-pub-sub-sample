@@ -20,6 +20,12 @@ param serviceBusNamespace string
 @description('Application Insights Connection String')
 param appInsightsConnectionString string
 
+@description('Assign role assignments to the managed identity')
+param doRoleAssignments bool
+
+@description('API Key')
+param apiKey string
+
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(managedIdentityName)) {
   name: managedIdentityName
 }
@@ -39,7 +45,7 @@ module webPubSubServer '../core/host/container-app-upsert.bicep' = {
     identityType: 'UserAssigned'
     identityName: managedIdentityName
     exists: exists
-    targetPort: 80
+    targetPort: 7002
     env: [
       {
         name: 'WebPubSub__Hostname'
@@ -61,7 +67,12 @@ module webPubSubServer '../core/host/container-app-upsert.bicep' = {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: appInsightsConnectionString
       }
+      {
+        name: 'ApiKey'
+        value: apiKey
+      }
     ]
+    doRoleAssignments: doRoleAssignments
   }
 }
 

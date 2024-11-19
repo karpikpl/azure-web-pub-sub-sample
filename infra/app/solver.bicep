@@ -4,6 +4,12 @@ param tags object = {}
 @description('Url for the web pub sub server')
 param webPubSubServerUrl string
 
+@description('Assign role assignments to the managed identity')
+param doRoleAssignments bool
+
+@description('API Key')
+param apiKey string
+
 param containerAppsEnvironmentName string
 param containerRegistryName string
 param name string = ''
@@ -32,7 +38,12 @@ module solver '../core/host/container-app-upsert.bicep' = {
         name: 'WEBPUBSUB_SERVER_URL'
         value: webPubSubServerUrl
       }
+      {
+        name: 'ApiKey'
+        value: apiKey
+      }
     ]
+    doRoleAssignments: doRoleAssignments
   }
 }
 
@@ -40,3 +51,4 @@ module solver '../core/host/container-app-upsert.bicep' = {
 output SOLVER_URI string = solver.outputs.uri
 output SERVICE_SOLVER_IMAGE_NAME string = solver.outputs.imageName
 output SERVICE_SOLVER_NAME string = solver.outputs.name
+output missingRoleAssignments string = doRoleAssignments ? '' : 'Assignment for ${managedIdentityName} to ${containerRegistryName} is not enabled. Add service "ACR Pull permissions" role to ${managedIdentityName}'

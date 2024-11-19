@@ -75,6 +75,9 @@ param serviceType string = ''
 @description('The target port for the container')
 param targetPort int = 80
 
+@description('Assign role assignments to the managed identity')
+param doRoleAssignments bool
+
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(identityName)) {
   name: identityName
 }
@@ -85,7 +88,7 @@ var usePrivateRegistry = !empty(identityName) && !empty(containerRegistryName)
 // Automatically set to `UserAssigned` when an `identityName` has been set
 var normalizedIdentityType = !empty(identityName) ? 'UserAssigned' : identityType
 
-module containerRegistryAccess '../security/registry-access.bicep' = if (usePrivateRegistry) {
+module containerRegistryAccess '../security/registry-access.bicep' = if (usePrivateRegistry && doRoleAssignments) {
   name: '${deployment().name}-registry-access'
   params: {
     containerRegistryName: containerRegistryName
