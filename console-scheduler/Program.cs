@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.WebPubSub.Clients;
-using Microsoft.Identity.Client;
 using Microsoft.Extensions.Configuration;
 
 var isDoneEvent = new ManualResetEventSlim(false);
@@ -18,10 +17,10 @@ var configuration = builder.Build();
 
 // Configuration
 // Replace with your Service Bus namespace and queue or topic name
-string fullyQualifiedNamespace = configuration["ServiceBus:Namespace"] ?? throw new ArgumentNullException("ServiceBus:Namespace");
-string queueOrTopicName = configuration["ServiceBus:TopicName"] ?? throw new ArgumentNullException("ServiceBus:TopicName");
-string webpubsubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new ArgumentNullException("WebPubSub:ServerUrl");
-string apiKey = configuration["ApiKey"] ?? throw new ArgumentNullException("ApiKey");
+string serviceBusConnectionString = configuration["ServiceBus:Namespace"] ?? configuration["ServiceBus:ConnectionString"] ?? throw new InvalidOperationException("ServiceBus:Namespace and ServiceBus:ConnectionString are missing. Provide either of them.");
+string queueOrTopicName = configuration["ServiceBus:TopicName"] ?? throw new InvalidOperationException("ServiceBus:TopicName setting is missing.");
+string webpubsubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new InvalidOperationException("WebPubSub:ServerUrl setting is missing.");
+string apiKey = configuration["ApiKey"] ?? throw new InvalidOperationException("ApiKey setting is missing.");
 
 string jobId = $"job-{Environment.UserName}-{DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture)}";
 string userid = $"scheduler-{jobId}";
@@ -33,8 +32,10 @@ using HttpClient httpClient = new HttpClient();
 httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
 var response = await httpClient.GetFromJsonAsync<NegotiateResponse>(webPubSubServerUri);
 
-// Create a ServiceBusClient using DefaultAzureCredential
-var client = new ServiceBusClient(fullyQualifiedNamespace, new DefaultAzureCredential());
+// Create a ServiceBusClient using DefaultAzureCredential or connection string
+var client = serviceBusConnectionString.Contains("SharedAccessKey")
+    ? new ServiceBusClient(serviceBusConnectionString)
+    : new ServiceBusClient(serviceBusConnectionString, new DefaultAzureCredential());
 
 // Create a WebPubSub client
 var webPubSubClient = new WebPubSubClient(new Uri(response!.Url));
@@ -92,6 +93,8 @@ Console.CancelKeyPress += async (sender, e) => {
 };
 
 await Task.Run(() => isDoneEvent.Wait());
+
+Console.WriteLine("Job is done. 👋👋👋");
 
 record Job(string Name, string CorrelationId, string[] Steps);
 record JobUpdate(string Name, string CorrelationId, string Step, string Status);

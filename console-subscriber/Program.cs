@@ -20,8 +20,8 @@ namespace subscriber
 
             string userid = configuration["WebPubSub:UserId"] ?? "console-subscriber";
             string groupName = configuration["WebPubSub:GroupName"] ?? "group";
-            string webPubSubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new ArgumentNullException("WebPubSub:ServerUrl");
-            string apiKey = configuration["ApiKey"] ?? throw new ArgumentNullException("ApiKey");
+            string webPubSubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new InvalidOperationException("WebPubSub:ServerUrl setting is missing.");
+            string apiKey = configuration["ApiKey"] ?? throw new InvalidOperationException("ApiKey setting is missing.");
 
             Uri webPubSubServerUri = new Uri($"{webPubSubServerUrl}/negotiate/{userid}/{groupName}");
 
