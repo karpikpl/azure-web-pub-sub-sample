@@ -103,3 +103,38 @@ To schedule a job, run `dotnet run` from `console-scheduler` directory.
 There are two other test project that just verify azure web pub sub is working:
 - `console-publisher` - sends message to all subscribers.
 - `console-subscriber` - subscribe to message from web pub sub.
+
+## Message Delivery Gurantees
+
+The sample uses [Azure Web PubSub Reliable JSON WebSocket subprotocol](https://learn.microsoft.com/en-us/azure/azure-web-pubsub/reference-json-reliable-webpubsub-subprotocol)
+
+
+1. Group Message Delivery:
+    * When you send a message to a group, Azure Web PubSub ensures that the message is delivered to all connected clients in that group.
+    * However, there is no built-in acknowledgment mechanism to confirm that each client has received the message. The server does not get an ACK for group messages.
+
+2. Client-to-Server ACK:
+
+    * When clients send messages directly to the server, the Reliable JSON WebSocket subprotocol can provide acknowledgments (ACKs) to confirm that the server has received the message.
+    * This ensures that the client knows whether the message was successfully delivered to the server.
+
+3. Message Redelivery on Client Restart:
+
+    * If a client disconnects and then reconnects, the Reliable JSON WebSocket subprotocol can handle message redelivery.
+    * The client can resume the WebSocket connection and request any missed messages from the server. This ensures that no messages are lost during the disconnection period.
+
+Summary:
+
+* **Group Message Delivery**: No ACKs for individual clients; delivery is best-effort.
+* **Client-to-Server ACK**: ACKs are provided to confirm message receipt by the server.
+* **Message Redelivery**: Supported on client restart to ensure no message loss.
+
+These reliability features help ensure that messages are delivered as expected, even in the presence of network disruptions or client restarts.
+
+### Client-to-client messages
+
+Since client <-> server messages are confirmed by ACK, one way for two clients to communicate is via server message routing. This way server can confirm messages were delivered.
+
+### Message delivery guarantee
+
+Web PubSub itself does not have a message delivery guarantee, it acts as a broker that delivers real-time messages to connected WebSocket clients. So if the WebSocket connection is disconnected, the client does not get the messages sent during this period
