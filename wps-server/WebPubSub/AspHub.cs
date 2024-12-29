@@ -1,3 +1,4 @@
+using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Azure.WebPubSub.AspNetCore;
 using Microsoft.Azure.WebPubSub.Common;
@@ -39,15 +40,38 @@ public class AspHub : WebPubSubHub
         return base.OnConnectedAsync(request);
     }
 
-    public override ValueTask<UserEventResponse> OnMessageReceivedAsync(UserEventRequest request, CancellationToken cancellationToken)
+    public override async ValueTask<UserEventResponse> OnMessageReceivedAsync(UserEventRequest request, CancellationToken cancellationToken)
     {
         var eventName = request.ConnectionContext.EventName;
         var userId = request.ConnectionContext.UserId;
-        var data = request.DataType == WebPubSubDataType.Text ? request.Data.ToString() : string.Empty;
+        UserEventResponse? response = null;
+        Exception? exception = null;
 
-        var response = request.CreateResponse($"Hello user {userId} from server. Got your event {eventName} with data {data}");
+        try
+        {
+            if (request.DataType == WebPubSubDataType.Text)
+            {
+                var data = request.DataType == WebPubSubDataType.Text ? request.Data.ToString() : string.Empty;
+                _logger.LogInformation("OnMessageReceivedAsync WebPubSubDataType.Text eventName:{EventName}, userId:{UserId} message:{Message}", eventName, userId, data);
+                response = request.CreateResponse($"Hello user {userId} from server. Got your event {eventName} with data {data}");
+            }
+            else
+            {
+                _logger.LogInformation("OnMessageReceivedAsync WebPubSubDataType.{type} eventName:{EventName}, userId:{UserId} message:{Message}",request.DataType, eventName, userId, request.Data.ToString());
+                var msg = request.Data.ToObjectFromJson() as Dictionary<string, object>;
+                if (msg != null && msg.TryGetValue("userId", out object? eventUserId) && msg.TryGetValue("message", out object? eventMessage) && eventUserId != null && eventMessage != null)
+                {
+                    var ack = await _webPubSubServiceClient.SendToUserAsync(eventUserId.ToString(), $"Message from user {userId}: {eventMessage}");
+                    _logger.LogInformation("SendToUserAsync userId:{UserId} message:{Message} status:{Status}", eventMessage, eventMessage, ack.Status);
+                    response = request.CreateResponse($"Hello user {userId} from server. Your message was sent to user {eventUserId} with status {ack.Status} ack: {ack.Content} requestId: {ack.ClientRequestId}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            exception = ex;
+        }
 
-        _logger.LogInformation("OnMessageReceivedAsync eventName:{EventName}, userId:{UserId} message:{Message}", eventName, userId, data);
-        return new ValueTask<UserEventResponse>(response);
+        return response ?? request.CreateResponse($"Hello user {userId} from server. Something went wrong: {exception?.Message}");
     }
 }
