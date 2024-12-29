@@ -10,6 +10,23 @@ namespace subscriber
     {
         static async Task Main(string[] args)
         {
+            Console.WriteLine("----------------------------------------");
+            Console.WriteLine("Azure Web PubSub Console Subscriber");
+            Console.WriteLine("----------------------------------------");
+            Console.WriteLine();
+            Console.WriteLine("Startup instructions:");
+            Console.WriteLine("  - Ensure you have the necessary configuration files (appsettings.json, appsettings.local.json) with the required settings.");
+            Console.WriteLine("  - You can override the UserId and GroupName by passing them as command line arguments:");
+            Console.WriteLine("      dotnet run -- WebPubSub:UserId=<your_user_id> WebPubSub:GroupName=<your_group_name>");
+            Console.WriteLine("  - Alternatively, set the environment variables 'WebPubSub:UserId' and 'WebPubSub:GroupName'.");
+            Console.WriteLine();
+            Console.WriteLine("Usage instructions:");
+            Console.WriteLine("  - To send a message to the group, type your message and press Enter.");
+            Console.WriteLine("  - To send an event, use the format 'e:<eventName> m:<message> u:<userId>' and press Enter.");
+            Console.WriteLine("  - To exit, press Enter without typing any message.");
+            Console.WriteLine("----------------------------------------");
+            Console.WriteLine();
+            
             ConfigurationBuilder builder = new ConfigurationBuilder();
             builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
             builder.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
@@ -20,6 +37,8 @@ namespace subscriber
 
             string userid = configuration["WebPubSub:UserId"] ?? "console-subscriber";
             string groupName = configuration["WebPubSub:GroupName"] ?? "group";
+
+            Console.WriteLine($"Starting subscriber with user id {userid} and group name {groupName}");
             string webPubSubServerUrl = configuration["WebPubSub:ServerUrl"] ?? throw new InvalidOperationException("WebPubSub:ServerUrl setting is missing.");
             string apiKey = configuration["ApiKey"] ?? throw new InvalidOperationException("ApiKey setting is missing.");
 
@@ -56,6 +75,7 @@ namespace subscriber
                 if (args.Message.FromUserId == userid)
                 {
                     // Skip messages from self
+                    Console.WriteLine("\tSkip message from self");
                     return Task.CompletedTask;
                 }
 
@@ -80,10 +100,21 @@ namespace subscriber
                     await client.DisposeAsync();
                     break;
                 }
+                else if (command.StartsWith("e:"))
+                {
+                    var commandData = command.Split(" ");
+                    var eventName = commandData.FirstOrDefault(e => e.StartsWith("e:"))?.Substring(2);
+                    var eventMessage = commandData.FirstOrDefault(e => e.StartsWith("m:"))?.Substring(2);
+                    var eventUserId = commandData.FirstOrDefault(e => e.StartsWith("u:"))?.Substring(2);
+
+                    var ack = await client.SendEventAsync(eventName, BinaryData.FromObjectAsJson(new { userId = eventUserId, message = eventMessage, eventName = eventName }), WebPubSubDataType.Json);
+                    Console.WriteLine("Event sent to server with message: {0}, to user: {1}. Ack: {2}", eventMessage, eventUserId, ack.AckId);
+                }
                 else
                 {
                     var jobUpdate = new JobUpdate("?", groupName, command, $"Update on {DateTime.Now} for {command}");
-                    await client.SendToGroupAsync(groupName, BinaryData.FromObjectAsJson(jobUpdate), WebPubSubDataType.Json);
+                    var ack = await client.SendToGroupAsync(groupName, BinaryData.FromObjectAsJson(jobUpdate), WebPubSubDataType.Json);
+                    Console.WriteLine("Message sent. Ack: {0}", ack.AckId);
                 }
             }
         }

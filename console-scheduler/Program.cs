@@ -76,7 +76,7 @@ await sender.SendMessageAsync(message);
 // Send the event to WebPubSub
 var submittedResponse = await webPubSubClient.SendEventAsync("asp_job_submitted", BinaryData.FromObjectAsJson(job), WebPubSubDataType.Json, fireAndForget: true);
 
-Console.WriteLine("Message sent.");
+Console.WriteLine("Message sent. Ack: {0}", submittedResponse.AckId);
 
 Console.CancelKeyPress += async (sender, e) => {
     e.Cancel = true; // Prevent the process from terminating immediately
@@ -84,8 +84,8 @@ Console.CancelKeyPress += async (sender, e) => {
     var response = Console.ReadKey(intercept: true).Key;
     if (response == ConsoleKey.Y) {
         // letting the solver know that the job has been cancelled
-        await webPubSubClient.SendToGroupAsync(jobId, BinaryData.FromObjectAsJson(new JobUpdate(job.Name, job.CorrelationId, "Cancelled", "Cancelled")), WebPubSubDataType.Json);
-        Console.WriteLine("Cancellation requested for the job.");
+        var cancelResponse = await webPubSubClient.SendToGroupAsync(jobId, BinaryData.FromObjectAsJson(new JobUpdate(job.Name, job.CorrelationId, "Cancelled", "Cancelled")), WebPubSubDataType.Json);
+        Console.WriteLine("Cancellation requested for the job. Ack: {0}", cancelResponse.AckId);
         isDoneEvent.Set();
     } else {
         Console.WriteLine("Continuing execution.");
